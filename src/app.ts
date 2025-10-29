@@ -13,6 +13,9 @@ export const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the Booklt API! 👋");
+});
 // Register API routes
 app.use("/api/experiences", experienceRoutes);
 // app.use("/api/promo", promoRoutes);
