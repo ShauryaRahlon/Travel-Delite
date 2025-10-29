@@ -1,0 +1,59 @@
+// This is your Prisma schema file.
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------
+// ASSIGNMENT MODELS
+// ---------------------------------------------------
+
+model Experience {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String
+  price       Float     // Use Float for currency
+  
+  // Relations
+  slots       Slot[]    // An experience has many slots
+  bookings    Booking[] // An experience has many bookings
+}
+
+model Slot {
+  id            String   @id @default(cuid())
+  date          DateTime // e.g., 2025-11-20T00:00:00Z
+  time          String   // e.g., "10:00 AM"
+  totalTickets  Int      @default(20)
+  bookedTickets Int      @default(0)
+  
+  // Relations
+  experienceId  String
+  experience    Experience @relation(fields: [experienceId], references: [id])
+  bookings      Booking[]  // A slot has many bookings
+  
+  // A slot for a given experience at a specific date/time must be unique
+  @@unique([experienceId, date, time])
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  userName     String
+  userEmail    String
+  promoCode    String?  // The '?' makes it optional
+  finalPrice   Float
+  createdAt    DateTime @default(now())
+  
+  // Relations
+  experienceId String
+  experience   Experience @relation(fields: [experienceId], references: [id])
+  
+  slotId       String
+  slot         Slot       @relation(fields: [slotId], references: [id])
+}
