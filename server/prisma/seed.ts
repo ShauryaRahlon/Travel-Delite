@@ -172,7 +172,7 @@ async function main() {
       description:
         "Curated small-group experience. Certified guide. Safety first with gear included.",
       imageUrl:
-        "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800",
+        "https://images.unsplash.com/photo-1595778039451-58a7c2946e7d?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2670",
       price: 999.0,
       slots: {
         create: [
