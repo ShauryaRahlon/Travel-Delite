@@ -10,8 +10,13 @@ export const getAllExperiences = async (req: Request, res: Response) => {
 // GET /experiences/:id
 export const getExperienceById = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "Missing id parameter" });
+    }
+
     const experience = await prisma.experience.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       include: {
         slots: true, // Automatically "joins" the slots table
       },
