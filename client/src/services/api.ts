@@ -40,7 +40,7 @@ apiClient.interceptors.response.use(
   (error: AxiosError<{ message?: string }>) => {
     if (error.code === "ECONNREFUSED" || error.code === "ERR_NETWORK") {
       throw new Error(
-        "Cannot connect to server. Make sure the backend server is running on localhost:4000"
+        "Cannot connect to server. Make sure the backend server is deployed"
       );
     }
 
