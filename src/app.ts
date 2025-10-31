@@ -3,7 +3,7 @@ import cors from "cors";
 
 import experienceRoutes from "./features/experiences/experience.routes.js";
 import promoRoutes from "./features/promo/promo.routes.js";
-import bookingRoutes from "./features/experiences/experience.routes.js";
+import bookingRoutes from "./Bookings/booking.routes.js";
 
 export const app = express();
 

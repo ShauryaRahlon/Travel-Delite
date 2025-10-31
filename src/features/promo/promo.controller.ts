@@ -1,11 +1,6 @@
 import { request, response } from "express";
 import { z } from "zod";
-
-const PROMO_CODES = {
-  //hardcoded for now , create a new table for this that will return discounted value and use that in booking route
-  SAVE10: { type: "percentage", value: 10 },
-  FLAT100: { type: "fixed", value: 100 },
-};
+import { validatePromoCode as validateCode } from "../../utils/promoCodes.js";
 
 // Define a schema for the incoming request body
 const promoSchema = z.object({
@@ -24,7 +19,7 @@ export const validatePromoCode = (
   }
 
   const { code } = validation.data;
-  const promo = PROMO_CODES[code.toUpperCase() as keyof typeof PROMO_CODES];
+  const promo = validateCode(code);
 
   if (!promo) {
     return res.status(404).json({ message: "Promo code not found" });

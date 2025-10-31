@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../db.js";
 import { z } from "zod";
+import { calculateDiscountedPrice } from "../utils/promoCodes.js";
 
 const bookingSchema = z.object({
   experienceId: z.string().cuid(),
@@ -22,10 +23,27 @@ export const createBooking = async (req: Request, res: Response) => {
     validation.data;
 
   try {
-    // 2. Use a transaction to ensure atomicity
+    // 2. Validate promo code and calculate actual price
+    let calculatedPrice = finalPrice;
+    let discountAmount = 0;
+    let promoDetails = null;
+
+    if (promoCode) {
+      const result = calculateDiscountedPrice(finalPrice, promoCode);
+
+      if (!result.promoDetails) {
+        return res.status(400).json({ message: "Invalid promo code" });
+      }
+
+      calculatedPrice = result.discountedPrice;
+      discountAmount = result.discountAmount;
+      promoDetails = result.promoDetails;
+    }
+
+    // 3. Use a transaction to ensure atomicity
     const booking = await prisma.$transaction(async (tx?: any) => {
       // 3. Atomically update the slot *only if* it has space.
-      // This is the core logic to prevent double booking.
+      // This is the core logic to prevent double booking. If any step fails this will roll back the entire transaction
       const slot = await tx.slot.update({
         where: {
           id: slotId,
@@ -61,7 +79,7 @@ export const createBooking = async (req: Request, res: Response) => {
         data: {
           userName: userName,
           userEmail: userEmail,
-          finalPrice: finalPrice,
+          finalPrice: calculatedPrice, // Use calculated price, not the input price
           promoCode: promoCode,
           experienceId: experienceId,
           slotId: slotId,
@@ -72,7 +90,13 @@ export const createBooking = async (req: Request, res: Response) => {
     });
 
     // 5. If transaction succeeded
-    res.status(201).json(booking);
+    res.status(201).json({
+      ...booking,
+      promoDetails: promoDetails,
+      originalPrice: finalPrice,
+      discountApplied: discountAmount,
+      finalPrice: calculatedPrice,
+    });
   } catch (error: any) {
     // 6. If transaction failed
     // This 'P2025' code fires if the 'where' clause fails
