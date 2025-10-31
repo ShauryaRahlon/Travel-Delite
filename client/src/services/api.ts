@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import { apiCache } from "./cache";
 import type {
   Experience,
   PromoValidationResponse,
@@ -66,12 +67,42 @@ apiClient.interceptors.response.use(
 
 export const api = {
   async getExperiences(): Promise<Experience[]> {
+    const cacheKey = "experiences";
+
+    // Check if data is in cache
+    const cachedData = apiCache.get<Experience[]>(cacheKey);
+    if (cachedData) {
+      console.log("Returning experiences from cache");
+      return cachedData;
+    }
+
+    // If not in cache, fetch from API
+    console.log("Fetching experiences from API");
     const response = await apiClient.get<Experience[]>("/experiences");
+
+    // Cache the data for 10 minutes
+    apiCache.set(cacheKey, response.data, 10 * 60 * 1000);
+
     return response.data;
   },
 
   async getExperienceById(id: string): Promise<Experience> {
+    const cacheKey = `experience_${id}`;
+
+    // Check if data is in cache
+    const cachedData = apiCache.get<Experience>(cacheKey);
+    if (cachedData) {
+      console.log(`Returning experience ${id} from cache`);
+      return cachedData;
+    }
+
+    // If not in cache, fetch from API
+    console.log(`Fetching experience ${id} from API`);
     const response = await apiClient.get<Experience>(`/experiences/${id}`);
+
+    // Cache the data for 15 minutes
+    apiCache.set(cacheKey, response.data, 15 * 60 * 1000);
+
     return response.data;
   },
 
@@ -89,6 +120,11 @@ export const api = {
         "/bookings",
         bookingData
       );
+
+      // Invalidate experiences cache after booking (availability might have changed)
+      apiCache.delete("experiences");
+      apiCache.delete(`experience_${bookingData.experienceId}`);
+
       return response.data;
     } catch (error) {
       if (error instanceof Error) {
@@ -107,5 +143,22 @@ export const api = {
       }
       throw error;
     }
+  },
+
+  // Cache management methods
+  clearCache(): void {
+    apiCache.clear();
+    console.log("API cache cleared");
+  },
+
+  clearExperiencesCache(): void {
+    apiCache.delete("experiences");
+    console.log("Experiences cache cleared");
+  },
+
+  refreshExperiences(): Promise<Experience[]> {
+    // Clear cache and fetch fresh data
+    apiCache.delete("experiences");
+    return this.getExperiences();
   },
 };

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../db.js";
 import { z } from "zod";
 import { calculateDiscountedPrice } from "../utils/promoCodes.js";
+import { serverCache } from "../utils/cache.js";
 
 const bookingSchema = z.object({
   experienceId: z.string().cuid(),
@@ -90,6 +91,13 @@ export const createBooking = async (req: Request, res: Response) => {
     });
 
     // 5. If transaction succeeded
+    // Invalidate cache as availability has changed
+    serverCache.delete("all_experiences");
+    serverCache.delete(`experience_${experienceId}`);
+    console.log(
+      `Cache invalidated for experience ${experienceId} after booking`
+    );
+
     res.status(201).json({
       ...booking,
       promoDetails: promoDetails,

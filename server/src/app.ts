@@ -48,9 +48,23 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 };
 
+// Cache middleware for static content
+const cacheMiddleware = (req: any, res: any, next: any) => {
+  // Add cache headers for GET requests to experiences (but not individual bookings)
+  if (req.method === "GET" && req.path.includes("/experiences")) {
+    // Cache for 5 minutes in browser, allow stale content for 1 hour
+    res.set(
+      "Cache-Control",
+      "public, max-age=300, stale-while-revalidate=3600"
+    );
+  }
+  next();
+};
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cacheMiddleware);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Booklt API! 👋");
